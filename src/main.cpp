@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <Arduino.h>
 
 const int trigPin = 9;
 const int echoPin = 10;
@@ -18,9 +19,10 @@ void checkNight() {
     --delayCheckNight;
   }
   else {
-    delayCheckNight = 1000;
-    int light = analogRead(ldrPin);
-    isNight = light < 200;
+    delayCheckNight = 100;
+    int light = analogRead(ldrPin); // +, -, out
+    isNight = light < 300;
+    Serial.println(light);
   }
 }
 
