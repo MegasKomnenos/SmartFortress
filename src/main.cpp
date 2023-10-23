@@ -10,6 +10,20 @@ const int ldrPin = A0;
 Servo servo1;
 Servo servo2;
 
+bool isNight = false;
+int delayCheckNight = 0;
+
+void checkNight() {
+  if(delayCheckNight) {
+    --delayCheckNight;
+  }
+  else {
+    delayCheckNight = 1000;
+    int light = analogRead(ldrPin);
+    isNight = light < 200;
+  }
+}
+
 void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
@@ -20,6 +34,9 @@ void setup() {
 }
 
 void loop() {
+  // check if it's night
+  checkNight();
+
   // 초음파 센서로 거리 측정
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
