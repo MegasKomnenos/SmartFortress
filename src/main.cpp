@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include <Arduino.h>
+#include "DHT.h"
 
 const int trigPin = 9;
 const int echoPin = 10;
@@ -8,11 +9,15 @@ const int servoPin2 = 6;
 const int buzzerPin = 3;
 const int ldrPin = A0;
 const int ledPin = 11;
+const int dhtPin = 2;
 
 Servo servo1;
 Servo servo2;
 
 bool isNight = false;
+
+DHT dht(dhtPin, DHT11);
+float humidity, celcius, farenheit;
 
 void checkNight() {
   int light = analogRead(ldrPin); // +, -, out
@@ -29,6 +34,23 @@ void doLight() {
   }
 }
 
+int doDHT() {
+  humidity = dht.readHumidity();
+  celcius = dht.readTemperature();
+  farenheit = dht.readTemperature(true);
+
+  if (isnan(humidity) || isnan(celcius) || isnan(farenheit)) {
+    Serial.println(F("Failed to read from DHT sensor!"));
+    return -1;
+  }
+
+  Serial.println(humidity);
+  Serial.println(celcius);
+  Serial.println(farenheit);
+
+  return 0;
+}
+
 void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
@@ -36,9 +58,15 @@ void setup() {
   servo1.attach(servoPin1);
   servo2.attach(servoPin2);
   Serial.begin(9600);
+  dht.begin();
 }
 
 void loop() {
+  // Check DHT and try again if error
+  if(doDHT() == -1) {
+    return;
+  }
+
   // check if it's night
   checkNight();
 
