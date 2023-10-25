@@ -18,6 +18,7 @@ bool isNight = false;
 
 DHT dht(dhtPin, DHT11);
 float humidity, celcius, farenheit;
+bool isFire = false;
 
 int um[8] = {262, 294, 330, 340, 392, 440, 494, 523};
 
@@ -84,6 +85,10 @@ int doDHT() {
   return 0;
 }
 
+void checkFire() {
+  isFire = celcius > 30;
+}
+
 void setup() {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
@@ -99,6 +104,9 @@ void loop() {
   if(doDHT() == -1) {
     return;
   }
+  
+  // check if there's fire
+  checkFire();
 
   // check if it's night
   checkNight();
