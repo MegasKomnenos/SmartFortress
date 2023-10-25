@@ -7,22 +7,25 @@ const int servoPin1 = 5;
 const int servoPin2 = 6;
 const int buzzerPin = 3;
 const int ldrPin = A0;
+const int ledPin = 11;
 
 Servo servo1;
 Servo servo2;
 
 bool isNight = false;
-int delayCheckNight = 0;
 
 void checkNight() {
-  if(delayCheckNight) {
-    --delayCheckNight;
+  int light = analogRead(ldrPin); // +, -, out
+  isNight = light < 300;
+  Serial.println(light);
+}
+
+void doLight() {
+  if(isNight) {
+    digitalWrite(ledPin, HIGH);
   }
   else {
-    delayCheckNight = 100;
-    int light = analogRead(ldrPin); // +, -, out
-    isNight = light < 300;
-    Serial.println(light);
+    digitalWrite(ledPin, LOW);
   }
 }
 
@@ -38,6 +41,9 @@ void setup() {
 void loop() {
   // check if it's night
   checkNight();
+
+  // turn on led if it's night
+  doLight();
 
   // 초음파 센서로 거리 측정
   digitalWrite(trigPin, LOW);
