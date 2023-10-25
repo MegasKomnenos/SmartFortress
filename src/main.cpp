@@ -19,6 +19,39 @@ bool isNight = false;
 DHT dht(dhtPin, DHT11);
 float humidity, celcius, farenheit;
 
+int um[8] = {262, 294, 330, 340, 392, 440, 494, 523};
+
+
+void fireSiren(){
+  for (int hz = 300; hz <= 750; hz++)
+  {
+    tone(buzzerPin, hz);
+
+    delay(5);
+  }
+  for (int hz = 750; hz >= 300; hz--)
+  {
+    tone(buzzerPin, hz);
+
+    delay(5);
+  }
+}
+
+void nightSiren(){
+  int eliseMelody[] = {659, 587, 659, 587, 659, 494, 523, 587, 392, 523, 349};
+  int noteDuration = 300; // 음표의 지속 시간 (밀리초)
+
+  for (int i = 0; i < 11; i++) {
+    tone(buzzerPin, eliseMelody[i], noteDuration); // 부저를 해당 음계로 설정하여 재생
+    delay(noteDuration + 50);
+  }
+}
+
+void stopBuzzer(){
+  noTone(buzzerPin);
+}
+
+
 void checkNight() {
   int light = analogRead(ldrPin); // +, -, out
   isNight = light < 300;
