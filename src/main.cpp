@@ -2,28 +2,47 @@
 #include <Arduino.h>
 #include "DHT.h"
 
-const int trigPin = 9;
-const int echoPin = 10;
-const int servoPin1 = 5;
-const int servoPin2 = 6;
 const int buzzerPin = 3;
 const int ldrPin = A0;
-const int ledPin = 11;
+const int ledPin = 4;
 const int dhtPin = 2;
 
 Servo servo1;
 Servo servo2;
 
 bool isNight = false;
+bool didNightBeep = false;
 
 DHT dht(dhtPin, DHT11);
 float humidity, celcius, farenheit;
 bool isFire = false;
+bool isRain = false;
 
 int um[8] = {262, 294, 330, 340, 392, 440, 494, 523};
 
 
 void fireSiren(){
+  if (!isFire)return;
+  for (int hz = 300; hz <= 750; hz++)
+  {
+    tone(buzzerPin, hz);
+
+    delay(5);
+  }
+  for (int hz = 750; hz >= 300; hz--)
+  {
+    tone(buzzerPin, hz);
+
+    delay(5);
+  }
+}
+
+void checkRain() {
+  isRain = humidity > 80;
+}
+
+void rainSiren(){
+  if (!isRain)return;
   for (int hz = 300; hz <= 750; hz++)
   {
     tone(buzzerPin, hz);
@@ -39,6 +58,9 @@ void fireSiren(){
 }
 
 void nightSiren(){
+  if (!isNight)return;
+  if(didNightBeep) return;
+  didNightBeep = true;
   int eliseMelody[] = {659, 587, 659, 587, 659, 494, 523, 587, 392, 523, 349};
   int noteDuration = 300; // 음표의 지속 시간 (밀리초)
 
@@ -55,11 +77,17 @@ void stopBuzzer(){
 
 void checkNight() {
   int light = analogRead(ldrPin); // +, -, out
+  if(isNight && light < 300) {
+    return;
+  }
   isNight = light < 300;
+  didNightBeep = !isNight;
   Serial.println(light);
+  Serial.println(isNight);
 }
 
 void doLight() {
+  Serial.println(isNight);
   if(isNight) {
     digitalWrite(ledPin, HIGH);
   }
@@ -86,15 +114,12 @@ int doDHT() {
 }
 
 void checkFire() {
-  isFire = celcius > 30;
+  isFire = celcius > 25;
 }
 
 void setup() {
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
+  pinMode(ledPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
-  servo1.attach(servoPin1);
-  servo2.attach(servoPin2);
   Serial.begin(9600);
   dht.begin();
 }
@@ -104,43 +129,20 @@ void loop() {
   if(doDHT() == -1) {
     return;
   }
+
+  doLight();
   
   // check if there's fire
   checkFire();
+  fireSiren();
 
   // check if it's night
   checkNight();
+  nightSiren();
 
-  // turn on led if it's night
-  doLight();
-
-  // 초음파 센서로 거리 측정
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  int duration = pulseIn(echoPin, HIGH);
-  float distance = duration * 0.034 / 2;
-
-  // 포토 레지스터 값 읽기
-  int ldrValue = analogRead(ldrPin);
-
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.print(" cm, LDR Value: ");
-  Serial.println(ldrValue);
-
-  // 거리에 따라 서보 모터와 부저 제어
-  if (distance < 10) {
-    servo1.write(90);  // 서보 모터 1을 90도로 회전
-    servo2.write(90);  // 서보 모터 2를 90도로 회전
-    tone(buzzerPin, 1000);  // 1kHz 주파수로 부저 울림
-  } else {
-    servo1.write(0);  // 서보 모터 1을 0도로 회전
-    servo2.write(0);  // 서보 모터 2를 0도로 회전
-    noTone(buzzerPin);  // 부저 중지
-  }
+  // check if it's rain
+  checkRain();
+  rainSiren();
 
   delay(1000);  // 1초 대기 후 다음 측정 수행
 }
